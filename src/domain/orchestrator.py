@@ -49,6 +49,7 @@ class TTSOrchestrator:
         self.config_mgr = config_mgr or ConfigManager()
         self.audio_processor = AudioProcessor()
         self.subtitle_exporter = SubtitleExporter()
+        self._cache: Dict[str, bytes] = {}
         self._register_default_plugins()
 
     def _register_default_plugins(self):
@@ -148,31 +149,50 @@ class TTSOrchestrator:
         logger.info(f"[Orchestrator] Step 1: Text Analysis starting for text length {len(text)}...")
         analysis_result = await self.analyze_text(text, user_config)
 
-        logger.info(f"[Orchestrator] Step 2: Synthesizing {len(analysis_result.segments)} segments using engine '{engine_name}'...")
-        audio_chunks_with_pause: List[Tuple[bytes, int]] = []
-        durations_ms: List[float] = []
+        logger.info(f"[Orchestrator] Step 2: Synthesizing {len(analysis_result.segments)} segments concurrently in parallel using engine '{engine_name}'...")
 
-        for idx, segment in enumerate(analysis_result.segments, start=1):
+        async def _synthesize_single_segment(idx: int, segment) -> Tuple[int, bytes, float]:
+            chunk_text = segment.normalized_text or segment.raw_text
+            voice_id = voice_settings.get("voice_id", "vi-VN-HoaiMyNeural")
+            speed = voice_settings.get("speed", 0.95) * segment.speed_adjustment
+            pitch = voice_settings.get("pitch", 2.0) + segment.pitch_adjustment
+            
             chunk = SynthesisChunk(
-                text=segment.normalized_text or segment.raw_text,
-                voice_id=voice_settings.get("voice_id", "vi-VN-HoaiMyNeural"),
-                speed=voice_settings.get("speed", 0.95) * segment.speed_adjustment,
-                pitch=voice_settings.get("pitch", 2.0) + segment.pitch_adjustment,
+                text=chunk_text,
+                voice_id=voice_id,
+                speed=speed,
+                pitch=pitch,
                 volume=voice_settings.get("volume", 1.0),
                 pause_after_ms=segment.pause_after_ms
             )
 
-            try:
-                raw_audio = await tts_engine.synthesize_chunk(chunk)
-            except Exception as err:
-                logger.warning(f"[Orchestrator] Chunk #{idx} failed with {tts_engine.engine_name}: {err}. Falling back to MockTTSEngine.")
-                mock_engine = MockTTSEngine()
-                raw_audio = await mock_engine.synthesize_chunk(chunk)
+            cache_key = f"{engine_name}:{voice_id}:{chunk_text}:{speed:.2f}:{pitch:.1f}"
+            if cache_key in self._cache:
+                logger.info(f"[Orchestrator] Cache HIT for segment #{idx} ('{chunk_text[:20]}...')")
+                raw_audio = self._cache[cache_key]
+            else:
+                try:
+                    raw_audio = await tts_engine.synthesize_chunk(chunk)
+                    if raw_audio:
+                        self._cache[cache_key] = raw_audio
+                except Exception as err:
+                    logger.warning(f"[Orchestrator] Chunk #{idx} failed with {tts_engine.engine_name}: {err}. Falling back to MockTTSEngine.")
+                    mock_engine = MockTTSEngine()
+                    raw_audio = await mock_engine.synthesize_chunk(chunk)
 
-            audio_chunks_with_pause.append((raw_audio, segment.pause_after_ms))
-            
-            est_duration = max(500.0, len(segment.normalized_text.split()) * 250.0)
-            durations_ms.append(est_duration)
+            est_duration = max(500.0, len(chunk_text.split()) * 250.0)
+            return idx, raw_audio, est_duration
+
+        tasks = [
+            _synthesize_single_segment(idx, segment)
+            for idx, segment in enumerate(analysis_result.segments, start=1)
+        ]
+        import asyncio
+        results = await asyncio.gather(*tasks)
+
+        results.sort(key=lambda x: x[0])
+        audio_chunks_with_pause: List[Tuple[bytes, int]] = [(r[1], analysis_result.segments[r[0]-1].pause_after_ms) for r in results]
+        durations_ms: List[float] = [r[2] for r in results]
 
         logger.info(f"[Orchestrator] Step 3: Stitching {len(audio_chunks_with_pause)} audio chunks...")
         final_audio_bytes = self.audio_processor.stitch_chunks(
