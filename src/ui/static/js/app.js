@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSynthesize = document.getElementById('btnSynthesize');
   const inspectorBody = document.getElementById('inspectorBody');
 
-  const aiToggle = document.getElementById('aiToggle');
   const aiProvider = document.getElementById('aiProvider');
   const apiKey = document.getElementById('apiKey');
 
@@ -68,8 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
   pauseMultiplier.addEventListener('input', () => pauseVal.textContent = `${pauseMultiplier.value}x`);
 
   const aiModeSelect = document.getElementById('aiModeSelect');
-  const aiProvider = document.getElementById('aiProvider');
-  const apiKey = document.getElementById('apiKey');
 
   const localProvider = document.getElementById('localProvider');
   const localModelSelect = document.getElementById('localModelSelect');
@@ -90,12 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modeBadge').textContent = badgeMap[mode] || badgeMap['rule_based'];
   });
 
+  const API_BASE = (window.location.protocol === 'file:' || !window.location.port) ? 'http://127.0.0.1:8000' : '';
+
   // Auto-detect local models via API
   if (btnRefreshModels) {
     btnRefreshModels.addEventListener('click', async () => {
       btnRefreshModels.textContent = "⏳ Đang quét...";
       try {
-        const resp = await fetch('/api/local-models');
+        const resp = await fetch(`${API_BASE}/api/local-models`);
         const data = await resp.json();
         if (data.models && data.models.length > 0) {
           localModelSelect.innerHTML = '';
@@ -161,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inspectorBody.innerHTML = "<div class='empty-state'>Đang phân tích ngữ âm...</div>";
 
     try {
-      const resp = await fetch('/api/analyze', {
+      const resp = await fetch(`${API_BASE}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, config: getActiveConfig() })
@@ -204,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSynthesize.textContent = "⏳ Đang tổng hợp...";
 
     try {
-      const resp = await fetch('/api/tts', {
+      const resp = await fetch(`${API_BASE}/api/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, config: getActiveConfig() })

@@ -1,8 +1,22 @@
 import io
+import os
+import logging
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+
+# Setup logging directory and format
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler("logs/app.log", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("VietTTS")
 
 from src.core.config_manager import ConfigManager
 from src.domain.orchestrator import TTSOrchestrator
@@ -15,7 +29,6 @@ app = FastAPI(
     version="1.1.0"
 )
 
-# CORS middleware for Web Client
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +41,6 @@ config_mgr = ConfigManager()
 orchestrator = TTSOrchestrator(config_mgr)
 local_detector = LocalModelDetector()
 
-# Serve Static UI files if present
 ui_static_dir = Path("src/ui/static")
 if ui_static_dir.exists():
     app.mount("/studio", StaticFiles(directory=str(ui_static_dir), html=True), name="static")
@@ -40,33 +52,41 @@ async def root():
 @app.post("/api/tts")
 async def synthesize_tts(req: TTSRequest):
     if not req.text.strip():
+        logger.warning("[API] Received empty text in /api/tts")
         raise HTTPException(status_code=400, detail="Input text cannot be empty.")
+    logger.info(f"[API] /api/tts requested for text snippet: '{req.text[:40]}...'")
     try:
         result = await orchestrator.process_and_synthesize(req.text, req.config)
+        logger.info(f"[API] /api/tts successfully generated {result.duration_seconds:.2f}s audio.")
         return result
     except Exception as e:
+        logger.error(f"[API] /api/tts exception: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/tts/raw")
 async def synthesize_tts_raw(req: TTSRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="Input text cannot be empty.")
+    logger.info(f"[API] /api/tts/raw requested for text snippet: '{req.text[:40]}...'")
     try:
         result = await orchestrator.process_and_synthesize(req.text, req.config)
         audio_bytes = bytes.fromhex(result.audio_hex)
         media_type = "audio/mpeg" if result.audio_format == "mp3" else "audio/wav"
         return Response(content=audio_bytes, media_type=media_type)
     except Exception as e:
+        logger.error(f"[API] /api/tts/raw exception: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/analyze")
 async def analyze_text(req: AnalyzeRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="Input text cannot be empty.")
+    logger.info(f"[API] /api/analyze requested for text snippet: '{req.text[:40]}...'")
     try:
         result = await orchestrator.analyze_text(req.text, req.config)
         return result
     except Exception as e:
+        logger.error(f"[API] /api/analyze exception: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/preview")

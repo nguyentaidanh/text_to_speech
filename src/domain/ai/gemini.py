@@ -8,19 +8,19 @@ AI_PROMPT_TEMPLATE = """You are a Vietnamese Speech Synthesizer Assistant.
 Analyze the following Vietnamese text and provide prosody, emotion, pause recommendations in strict JSON format.
 
 JSON format required:
-{
+{{
   "suggested_global_emotion": "warm",
   "segments": [
-    {
+    {{
       "sentence_id": 1,
       "raw_text": "...",
       "normalized_text": "...",
       "emotion": "warm",
       "pause_after_ms": 700,
       "emphasis_words": ["word1"]
-    }
+    }}
   ]
-}
+}}
 
 Input Text:
 {text}
@@ -39,7 +39,6 @@ class GeminiProvider(AIAnalyzer):
     async def analyze(self, text: str, config: Dict[str, Any]) -> AnalysisResult:
         api_key = config.get("api_key")
         if not api_key:
-            # Fallback to rule-based if no API key provided
             res = await self.fallback.analyze(text, config)
             res.provider = "gemini_fallback_no_key"
             return res
@@ -82,7 +81,6 @@ class GeminiProvider(AIAnalyzer):
         except Exception:
             pass
 
-        # Fallback if request fails
         res = await self.fallback.analyze(text, config)
         res.provider = "gemini_fallback_error"
         return res

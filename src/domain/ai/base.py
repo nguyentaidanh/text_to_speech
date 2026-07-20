@@ -18,6 +18,9 @@ class RuleBasedAnalyzer(AIAnalyzer):
         return "rule_based"
 
     async def analyze(self, text: str, config: Dict[str, Any]) -> AnalysisResult:
+        if "pause_rules" in config and isinstance(config["pause_rules"], dict):
+            self.pause_engine.rules.update(config["pause_rules"])
+            
         multiplier = config.get("pause_multiplier", 1.0)
         paragraphs = self.tokenizer.split_paragraphs(text)
         
