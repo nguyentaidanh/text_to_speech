@@ -60,16 +60,19 @@
         <div class="settings-scroll">
           <!-- AI Mode Settings -->
           <fieldset class="setting-group">
-            <legend>🤖 Chế độ AI (Optional)</legend>
+            <legend>🤖 Chế độ Phân tích Ngữ âm (Analysis Mode)</legend>
             <div class="form-group">
-              <label for="aiToggle">Bật Phân tích AI:</label>
-              <select id="aiToggle">
-                <option value="false">Tắt (Rule-Based, 0$ Chi phí, Offline)</option>
-                <option value="true">Bật (AI Prosody & Emotion)</option>
+              <label for="aiModeSelect">Chọn Chế độ Phân tích:</label>
+              <select id="aiModeSelect">
+                <option value="rule_based">MODE 1: Rule-Based (0$ Chi phí, Offline Mặc định)</option>
+                <option value="cloud_ai">MODE 2: Cloud AI (Gemini, OpenAI, Claude, DeepSeek)</option>
+                <option value="local_ai">MODE 3: Local AI Offline (Ollama, LM Studio, vLLM)</option>
               </select>
             </div>
-            <div class="form-group ai-field">
-              <label for="aiProvider">Nhà cung cấp AI:</label>
+
+            <!-- Cloud AI Fields -->
+            <div class="form-group cloud-ai-field" style="display:none;">
+              <label for="aiProvider">Nhà cung cấp Cloud AI:</label>
               <select id="aiProvider">
                 <option value="gemini">Google Gemini</option>
                 <option value="openai">OpenAI (GPT-4o)</option>
@@ -79,9 +82,38 @@
                 <option value="custom">Custom REST API</option>
               </select>
             </div>
-            <div class="form-group ai-field">
+            <div class="form-group cloud-ai-field" style="display:none;">
               <label for="apiKey">API Key:</label>
-              <input type="password" id="apiKey" placeholder="Nhập API Key của bạn...">
+              <input type="password" id="apiKey" placeholder="Nhập API Key...">
+            </div>
+
+            <!-- Local AI Fields -->
+            <div class="form-group local-ai-field" style="display:none;">
+              <label for="localProvider">Local Engine:</label>
+              <select id="localProvider">
+                <option value="ollama">Ollama (Local API)</option>
+                <option value="lm_studio">LM Studio (OpenAI Compatible)</option>
+                <option value="llama_cpp">llama.cpp Server</option>
+                <option value="vllm">vLLM Engine</option>
+                <option value="openai_local">Custom Local REST API</option>
+              </select>
+            </div>
+            <div class="form-group local-ai-field" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label for="localModelSelect">Model đã nhận diện:</label>
+                <button id="btnRefreshModels" class="btn-preset" style="padding:2px 6px;">🔄 Quét Model</button>
+              </div>
+              <select id="localModelSelect">
+                <option value="qwen2.5:7b">Qwen 2.5 7B (Khuyên dùng cho Tiếng Việt)</option>
+                <option value="llama3.2:3b">Llama 3.2 3B (Nhẹ - 8GB RAM)</option>
+              </select>
+            </div>
+            <div class="form-group local-ai-field" style="display:none;">
+              <label for="localHost">Host & Port:</label>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="localHost" value="127.0.0.1" style="flex:2;">
+                <input type="number" id="localPort" value="11434" style="flex:1;">
+              </div>
             </div>
           </fieldset>
 

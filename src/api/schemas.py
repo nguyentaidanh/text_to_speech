@@ -12,5 +12,6 @@ class AnalyzeRequest(BaseModel):
 class SettingsUpdateRequest(BaseModel):
     general: Optional[Dict[str, Any]] = None
     ai: Optional[Dict[str, Any]] = None
+    local_ai: Optional[Dict[str, Any]] = None
     voice: Optional[Dict[str, Any]] = None
     pause_rules: Optional[Dict[str, int]] = None

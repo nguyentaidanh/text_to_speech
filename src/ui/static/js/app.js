@@ -67,21 +67,72 @@ document.addEventListener('DOMContentLoaded', () => {
   pitchRange.addEventListener('input', () => pitchVal.textContent = `${pitchRange.value}Hz`);
   pauseMultiplier.addEventListener('input', () => pauseVal.textContent = `${pauseMultiplier.value}x`);
 
-  aiToggle.addEventListener('change', () => {
-    const isAi = aiToggle.value === "true";
-    document.querySelectorAll('.ai-field').forEach(el => {
-      el.style.display = isAi ? 'flex' : 'none';
-    });
-    document.getElementById('modeBadge').textContent = isAi ? "MODE 2: AI-Assisted" : "MODE 1: Rule-Based (Offline)";
+  const aiModeSelect = document.getElementById('aiModeSelect');
+  const aiProvider = document.getElementById('aiProvider');
+  const apiKey = document.getElementById('apiKey');
+
+  const localProvider = document.getElementById('localProvider');
+  const localModelSelect = document.getElementById('localModelSelect');
+  const localHost = document.getElementById('localHost');
+  const localPort = document.getElementById('localPort');
+  const btnRefreshModels = document.getElementById('btnRefreshModels');
+
+  aiModeSelect.addEventListener('change', () => {
+    const mode = aiModeSelect.value;
+    document.querySelectorAll('.cloud-ai-field').forEach(el => el.style.display = (mode === 'cloud_ai') ? 'flex' : 'none');
+    document.querySelectorAll('.local-ai-field').forEach(el => el.style.display = (mode === 'local_ai') ? 'flex' : 'none');
+
+    const badgeMap = {
+      'rule_based': "MODE 1: Rule-Based (0$ Offline)",
+      'cloud_ai': "MODE 2: Cloud AI Assisted",
+      'local_ai': "MODE 3: Local AI Offline"
+    };
+    document.getElementById('modeBadge').textContent = badgeMap[mode] || badgeMap['rule_based'];
   });
+
+  // Auto-detect local models via API
+  if (btnRefreshModels) {
+    btnRefreshModels.addEventListener('click', async () => {
+      btnRefreshModels.textContent = "⏳ Đang quét...";
+      try {
+        const resp = await fetch('/api/local-models');
+        const data = await resp.json();
+        if (data.models && data.models.length > 0) {
+          localModelSelect.innerHTML = '';
+          data.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.name;
+            opt.textContent = `${m.name} (${m.provider} ${m.size_mb ? m.size_mb + 'MB' : ''})`;
+            localModelSelect.appendChild(opt);
+          });
+          alert(`Đã tìm thấy ${data.models.length} local model!`);
+        } else {
+          alert("Không tìm thấy local model đang chạy. Vui lòng bật Ollama hoặc LM Studio!");
+        }
+      } catch (err) {
+        alert("Lỗi khi kết nối local detector!");
+      } finally {
+        btnRefreshModels.textContent = "🔄 Quét Model";
+      }
+    });
+  }
 
   // Collect active config
   function getActiveConfig() {
+    const selectedMode = aiModeSelect ? aiModeSelect.value : 'rule_based';
     return {
+      mode: selectedMode,
       ai: {
-        enabled: aiToggle.value === "true",
+        enabled: selectedMode === 'cloud_ai',
         provider: aiProvider.value,
         api_key: apiKey.value
+      },
+      local_ai: {
+        enabled: selectedMode === 'local_ai',
+        provider: localProvider.value,
+        model: localModelSelect.value,
+        host: localHost.value,
+        port: parseInt(localPort.value) || 11434
       },
       voice: {
         engine: "edge_tts",

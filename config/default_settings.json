@@ -1,13 +1,14 @@
 {
   "general": {
     "app_name": "VietTTS Studio",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "theme": "dark",
     "language": "vi",
     "output_dir": "outputs",
     "sample_rate": 24000,
     "output_format": "mp3"
   },
+  "mode": "rule_based",
   "ai": {
     "enabled": false,
     "provider": "gemini",
@@ -17,14 +18,30 @@
     "timeout": 15,
     "custom_url": ""
   },
+  "local_ai": {
+    "enabled": false,
+    "provider": "ollama",
+    "host": "127.0.0.1",
+    "port": 11434,
+    "model": "qwen2.5:7b",
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 40,
+    "context_length": 4096,
+    "max_tokens": 1024,
+    "timeout": 30,
+    "gpu_layers": -1,
+    "threads": 4,
+    "keep_alive": "5m"
+  },
   "voice": {
     "engine": "edge_tts",
-    "voice_id": "vi-VN-NamMinhNeural",
-    "gender": "male",
-    "speed": 1.0,
-    "pitch": 0,
+    "voice_id": "vi-VN-HoaiMyNeural",
+    "gender": "female",
+    "speed": 0.95,
+    "pitch": 2.0,
     "volume": 1.0,
     "pause_multiplier": 1.0,
-    "emotion": "neutral"
+    "emotion": "sweet"
   }
 }

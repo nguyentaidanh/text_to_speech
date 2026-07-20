@@ -15,6 +15,13 @@ from src.domain.ai.deepseek import DeepSeekProvider
 from src.domain.ai.qwen import QwenProvider
 from src.domain.ai.custom import CustomProvider
 
+# Local AI Providers
+from src.domain.ai.local.ollama import OllamaAnalyzer
+from src.domain.ai.local.llama_cpp import LlamaCppAnalyzer
+from src.domain.ai.local.lm_studio import LMStudioAnalyzer
+from src.domain.ai.local.vllm import VLLMAnalyzer
+from src.domain.ai.local.custom_local import OpenAICompatibleLocalAnalyzer
+
 from src.domain.tts.base import MockTTSEngine
 from src.domain.tts.edge_tts import EdgeTTSEngine
 from src.domain.tts.piper_tts import PiperTTSEngine
@@ -25,7 +32,7 @@ from src.domain.audio.subtitle import SubtitleExporter
 
 class SynthesisResponse(BaseModel):
     analysis: AnalysisResult
-    audio_hex: str  # Base64 or raw audio hex representation
+    audio_hex: str
     audio_format: str
     sample_rate: int
     duration_seconds: float
@@ -33,7 +40,7 @@ class SynthesisResponse(BaseModel):
     metadata_json: Dict[str, Any]
 
 class TTSOrchestrator:
-    """Core Orchestrator coordinating NLP, AI, TTS Engines, and Audio Stitching."""
+    """Core Orchestrator coordinating NLP, AI (Cloud & Local), TTS Engines, and Audio Stitching."""
 
     def __init__(self, config_mgr: ConfigManager = None):
         self.config_mgr = config_mgr or ConfigManager()
@@ -42,7 +49,7 @@ class TTSOrchestrator:
         self._register_default_plugins()
 
     def _register_default_plugins(self):
-        # AI Providers
+        # AI Providers (Rule-based & Cloud)
         PluginRegistry.register_ai_provider("rule_based", RuleBasedAnalyzer)
         PluginRegistry.register_ai_provider("gemini", GeminiProvider)
         PluginRegistry.register_ai_provider("openai", OpenAIProvider)
@@ -50,6 +57,13 @@ class TTSOrchestrator:
         PluginRegistry.register_ai_provider("deepseek", DeepSeekProvider)
         PluginRegistry.register_ai_provider("qwen", QwenProvider)
         PluginRegistry.register_ai_provider("custom", CustomProvider)
+
+        # Local AI Providers (MODE 3 - 100% Offline Local LLM)
+        PluginRegistry.register_ai_provider("ollama", OllamaAnalyzer)
+        PluginRegistry.register_ai_provider("llama_cpp", LlamaCppAnalyzer)
+        PluginRegistry.register_ai_provider("lm_studio", LMStudioAnalyzer)
+        PluginRegistry.register_ai_provider("vllm", VLLMAnalyzer)
+        PluginRegistry.register_ai_provider("openai_local", OpenAICompatibleLocalAnalyzer)
 
         # TTS Engines
         PluginRegistry.register_tts_engine("mock", MockTTSEngine)
@@ -63,18 +77,36 @@ class TTSOrchestrator:
         if user_config:
             settings.update(user_config)
 
-        ai_settings = settings.get("ai", {})
-        ai_enabled = ai_settings.get("enabled", False)
+        mode = settings.get("mode", "rule_based")
+        local_ai_settings = settings.get("local_ai", {})
+        cloud_ai_settings = settings.get("ai", {})
 
-        if not ai_enabled:
+        provider_cls = None
+        merged_config = {**settings.get("voice", {})}
+
+        if local_ai_settings.get("enabled", False) or mode == "local_ai":
+            provider_name = local_ai_settings.get("provider", "ollama")
+            provider_cls = PluginRegistry.get_ai_provider(provider_name)
+            merged_config.update(local_ai_settings)
+        elif cloud_ai_settings.get("enabled", False) or mode == "cloud_ai":
+            provider_name = cloud_ai_settings.get("provider", "gemini")
+            provider_cls = PluginRegistry.get_ai_provider(provider_name)
+            merged_config.update(cloud_ai_settings)
+
+        if not provider_cls:
             provider_cls = PluginRegistry.get_ai_provider("rule_based")
-        else:
-            provider_name = ai_settings.get("provider", "gemini")
-            provider_cls = PluginRegistry.get_ai_provider(provider_name) or PluginRegistry.get_ai_provider("rule_based")
 
         analyzer_instance: AIAnalyzer = provider_cls() if callable(provider_cls) else provider_cls
-        merged_config = {**ai_settings, **settings.get("voice", {})}
-        return await analyzer_instance.analyze(text, merged_config)
+
+        try:
+            return await analyzer_instance.analyze(text, merged_config)
+        except Exception:
+            # Graceful automatic failover to RuleBasedAnalyzer if Local/Cloud AI errors out
+            fallback_cls = PluginRegistry.get_ai_provider("rule_based")
+            fallback_instance = fallback_cls() if callable(fallback_cls) else fallback_cls
+            res = await fallback_instance.analyze(text, merged_config)
+            res.provider = "rule_based_failover"
+            return res
 
     async def get_all_voices(self) -> List[VoiceInfo]:
         voices: List[VoiceInfo] = []
@@ -100,7 +132,7 @@ class TTSOrchestrator:
         engine_cls = PluginRegistry.get_tts_engine(engine_name) or PluginRegistry.get_tts_engine("edge_tts")
         tts_engine: TTSEngine = engine_cls() if isinstance(engine_cls, type) else engine_cls
 
-        # Step 1: Text Analysis (Rule-Based or AI)
+        # Step 1: Text Analysis (Rule-Based, Cloud AI, or Local AI)
         analysis_result = await self.analyze_text(text, user_config)
 
         # Step 2: Synthesize each segment chunk
@@ -110,9 +142,9 @@ class TTSOrchestrator:
         for segment in analysis_result.segments:
             chunk = SynthesisChunk(
                 text=segment.normalized_text or segment.raw_text,
-                voice_id=voice_settings.get("voice_id", "vi-VN-NamMinhNeural"),
-                speed=voice_settings.get("speed", 1.0) * segment.speed_adjustment,
-                pitch=voice_settings.get("pitch", 0.0) + segment.pitch_adjustment,
+                voice_id=voice_settings.get("voice_id", "vi-VN-HoaiMyNeural"),
+                speed=voice_settings.get("speed", 0.95) * segment.speed_adjustment,
+                pitch=voice_settings.get("pitch", 2.0) + segment.pitch_adjustment,
                 volume=voice_settings.get("volume", 1.0),
                 pause_after_ms=segment.pause_after_ms
             )
@@ -120,13 +152,11 @@ class TTSOrchestrator:
             try:
                 raw_audio = await tts_engine.synthesize_chunk(chunk)
             except Exception:
-                # Fallback to mock synthesis if external network fails
                 mock_engine = MockTTSEngine()
                 raw_audio = await mock_engine.synthesize_chunk(chunk)
 
             audio_chunks_with_pause.append((raw_audio, segment.pause_after_ms))
             
-            # Approximate audio duration (or extract exact header)
             est_duration = max(500.0, len(segment.normalized_text.split()) * 250.0)
             durations_ms.append(est_duration)
 

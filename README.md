@@ -9,9 +9,9 @@
 
 ---
 
-## 🌟 Core Architecture Principles
+## 🌟 Architecture & Analysis Modes
 
-### ⚡ MODE 1: Rule-Based Text Processing (Default - Zero API Cost, 100% Offline)
+### ⚡ MODE 1: Rule-Based Processing (Default - Zero Cost, 100% Offline)
 - **Zero API Expenses**: Operates 100% offline without requiring any AI API keys, providing ultra-fast and stable speech synthesis.
 - **Comprehensive Vietnamese Linguistic Engine**:
   - **Numbers & Dates**: `2026` $\rightarrow$ `hai nghìn không trăm hai mươi sáu`, `20/07/2026` $\rightarrow$ `ngày hai mươi tháng bảy năm hai nghìn không trăm hai mươi sáu`.
@@ -19,28 +19,32 @@
   - **Units & Measurements**: `50km` $\rightarrow$ `năm mươi ki lô mét`, `25°C` $\rightarrow$ `hai mươi lăm độ C`.
   - **Acronyms & Roman Numerals**: `TP.HCM` $\rightarrow$ `Thành phố Hồ Chí Minh`, `XXI` $\rightarrow$ `hai mươi mốt`.
   - **English Words & Symbols**: Auto-phonetizes foreign loan words (`youtube` $\rightarrow$ `yêu túp`, `%` $\rightarrow$ `phần trăm`).
-- **Customizable Punctuation Pause Rules (ms)**:
-  - Comma (`,`): `250 ms`
-  - Period (`.`): `700 ms`
-  - Colon (`:`): `400 ms`
-  - Semicolon (`;`): `350 ms`
-  - Question mark (`?`): `700 ms`
-  - Exclamation mark (`!`): `650 ms`
-  - Paragraph Break / Newline: `700 ms - 1000 ms`
 
 ---
 
-### 🤖 MODE 2: Optional AI-Assisted Text Analysis
-- Integrates leading AI Providers: **Google Gemini**, **OpenAI (GPT-4o)**, **Anthropic Claude**, **DeepSeek**, **Qwen (Alibaba)**, and **Custom REST APIs (Ollama/VLLM)**.
-- **Pure Prosody Analysis**: AI optimizes pause durations, emotions, and speech emphasis **without performing TTS audio generation (No audio API costs)**.
-- Graceful automatic fallback to MODE 1 rule-based processing if API keys are missing or requests time out.
+### 💻 MODE 2: Cloud AI-Assisted Text Analysis
+- Integrates leading Cloud AI Providers: **Google Gemini**, **OpenAI (GPT-4o)**, **Anthropic Claude**, **DeepSeek**, **Qwen (Alibaba)**, and **Custom REST APIs**.
+- **Pure Prosody Analysis**: AI optimizes pause durations, emotions, and emphasis **without performing TTS audio generation (Zero audio API costs)**.
 
 ---
 
-### 🎧 Professional Voice Pipeline
-- Default Vietnamese Male Voice: **Deep, Warm, Natural Podcast / Audiobook style (No robotic artifacts)**.
-- Clear, natural female voice options.
-- Dynamic adjustments for Speed, Pitch, Volume, and Pause Multipliers.
+### 🖥️ MODE 3: Local AI Speech Analysis (100% Offline AI Prosody)
+- **Zero Cloud API Costs**: Runs local LLMs via **Ollama**, **llama.cpp**, **LM Studio**, **vLLM**, or **OpenAI-Compatible Local APIs**.
+- **Automatic Model Detection**: Scans and displays available local models automatically (`GET /api/local-models`).
+- **Automatic Failover**: Automatically falls back to MODE 1 (Rule-Based Analyzer) if the local AI service times out or is unreachable.
+
+---
+
+## 🖥️ Hardware & Vietnamese Local Model Matrix
+
+| Hardware Spec | Recommended Model | Quantization | RAM Req. | VRAM Req. | Speed (tok/s) | Quality | License |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **8GB RAM / CPU-only** | `Llama-3.2-3B-Instruct` | Q4_K_M | ~3.5 GB | N/A | 15–25 t/s | Good | Llama 3.2 |
+| **16GB RAM / CPU-only** | `Qwen2.5-7B-Instruct` | Q4_K_M | ~5.8 GB | N/A | 10–18 t/s | Excellent | Apache 2.0 |
+| **32GB RAM / CPU-only** | `Qwen2.5-14B-Instruct` | Q4_K_M | ~9.5 GB | N/A | 6–12 t/s | Superior | Apache 2.0 |
+| **RTX 3060 (12GB VRAM)** | `Qwen2.5-7B-Instruct` | Q5_K_M / Q8 | ~2 GB | ~6.5 GB | 55–80 t/s | Superior | Apache 2.0 |
+| **RTX 4060 (8GB VRAM)** | `Qwen2.5-7B-Instruct` | Q4_K_M | ~2 GB | ~5.2 GB | 60–90 t/s | Superior | Apache 2.0 |
+| **RTX 4070 (12GB VRAM)**| `DeepSeek-R1-Distill-Qwen-14B` | Q4_K_M | ~2 GB | ~9.8 GB | 45–70 t/s | SOTA | MIT |
 
 ---
 
@@ -56,13 +60,14 @@ text_to_speech/
 │   ├── core/                    # Core Interfaces, Plugin Registry & Config Manager
 │   ├── domain/
 │   │   ├── nlp/                 # Rule-Based Vietnamese Normalizer Engine
-│   │   ├── ai/                  # AI Providers (Gemini, OpenAI, Claude, DeepSeek, Qwen)
+│   │   ├── ai/                  # Cloud & Local AI Providers
+│   │   │   └── local/           # [NEW] Ollama, llama.cpp, LM Studio, vLLM Local AI Providers
 │   │   ├── tts/                 # Multi-Engine TTS Adapter Matrix (EdgeTTS, Piper, VITS)
 │   │   ├── audio/               # Audio Pause Stitcher & SRT Subtitle Exporter
-│   │   └── orchestrator.py      # Main Pipeline Controller
+│   │   └── orchestrator.py      # Main Pipeline Controller with Failover
 │   ├── api/                     # FastAPI REST API Server
 │   └── ui/                      # Studio UI (HTML5/CSS3/JS & Desktop launcher)
-├── tests/                       # Automated Test Suite (Unit & Integration Tests)
+├── tests/                       # Test Suite (Unit & Local AI Tests)
 ├── docker/                      # Dockerfile & docker-compose.yml
 ├── main.py                      # Primary Application Entrypoint
 └── requirements.txt
@@ -87,31 +92,12 @@ uv run python main.py
 
 ---
 
-### Method 2: Using Standard `pip`
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Launch application
-python main.py
-```
-
----
-
-### Method 3: Standalone Web Server
+### Method 2: Standalone Web Server
 ```bash
 uv run python -m uvicorn src.api.server:app --reload --port 8000
 ```
 - Studio Web Interface: 👉 **[http://127.0.0.1:8000/studio](http://127.0.0.1:8000/studio)**
 - Interactive Swagger API Docs: 👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
-
----
-
-### Method 4: Docker Deployment
-```bash
-docker-compose -f docker/docker-compose.yml up --build -d
-```
 
 ---
 
@@ -121,8 +107,8 @@ docker-compose -f docker/docker-compose.yml up --build -d
 | :--- | :--- | :--- |
 | `POST` | `/api/tts` | Synthesize text and return full audio & metadata response |
 | `POST` | `/api/tts/raw` | Stream raw binary audio (`audio/mpeg` or `audio/wav`) |
-| `/api/analyze` | `POST` | Analyze Vietnamese text for prosody & millisecond pause breakdown |
-| `/api/preview` | `POST` | Synthesize short preview snippet (first 100 characters) |
+| `POST` | `/api/analyze` | Analyze Vietnamese text for prosody & millisecond pause breakdown |
+| `GET` | `/api/local-models` | Auto-detect installed models from Ollama & local LLM servers |
 | `GET` | `/api/voices` | Retrieve available voices across installed TTS engines |
 | `GET/PUT` | `/api/settings` | Retrieve or update application configuration & pause rules |
 
@@ -135,13 +121,6 @@ Execute automated unit tests with `pytest`:
 ```bash
 uv run python -m pytest tests/
 ```
-
----
-
-## 📄 Output Formats
-- 🎵 Audio: `MP3`, `WAV`, `OGG`
-- 📄 Subtitles: `SRT` (Millisecond timestamp precision)
-- 📊 Metadata: `JSON`
 
 ---
 

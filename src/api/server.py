@@ -6,12 +6,13 @@ from pathlib import Path
 
 from src.core.config_manager import ConfigManager
 from src.domain.orchestrator import TTSOrchestrator
+from src.domain.ai.local.detector import LocalModelDetector
 from src.api.schemas import TTSRequest, AnalyzeRequest, SettingsUpdateRequest
 
 app = FastAPI(
     title="VietTTS Studio REST API",
     description="Production-ready Vietnamese Text-to-Speech Desktop/Web Engine",
-    version="1.0.0"
+    version="1.1.0"
 )
 
 # CORS middleware for Web Client
@@ -25,6 +26,7 @@ app.add_middleware(
 
 config_mgr = ConfigManager()
 orchestrator = TTSOrchestrator(config_mgr)
+local_detector = LocalModelDetector()
 
 # Serve Static UI files if present
 ui_static_dir = Path("src/ui/static")
@@ -69,7 +71,6 @@ async def analyze_text(req: AnalyzeRequest):
 
 @app.post("/api/preview")
 async def preview_text(req: TTSRequest):
-    # Preview first 100 characters
     preview_text = req.text[:100]
     return await synthesize_tts(TTSRequest(text=preview_text, config=req.config))
 
@@ -77,6 +78,11 @@ async def preview_text(req: TTSRequest):
 async def list_voices():
     voices = await orchestrator.get_all_voices()
     return {"voices": voices}
+
+@app.get("/api/local-models")
+async def list_local_models():
+    models = await local_detector.detect_all()
+    return {"models": models}
 
 @app.get("/api/settings")
 async def get_settings():
@@ -91,6 +97,10 @@ async def update_settings(req: SettingsUpdateRequest):
         config_mgr.settings["general"].update(req.general)
     if req.ai:
         config_mgr.settings["ai"].update(req.ai)
+    if req.local_ai:
+        if "local_ai" not in config_mgr.settings:
+            config_mgr.settings["local_ai"] = {}
+        config_mgr.settings["local_ai"].update(req.local_ai)
     if req.voice:
         config_mgr.settings["voice"].update(req.voice)
     if req.pause_rules:
