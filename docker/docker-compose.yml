@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  viettts-studio:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: viettts_studio_app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../config:/app/config
+      - ../outputs:/app/outputs
+    restart: unless-stopped

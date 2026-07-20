@@ -1,0 +1,13 @@
+{
+  "pause_durations_ms": {
+    ",": 250,
+    ".": 700,
+    ":": 400,
+    ";": 350,
+    "?": 700,
+    "!": 650,
+    "paragraph": 1000,
+    "newline": 700
+  },
+  "default_multiplier": 1.0
+}

@@ -1,0 +1,30 @@
+{
+  "general": {
+    "app_name": "VietTTS Studio",
+    "version": "1.0.0",
+    "theme": "dark",
+    "language": "vi",
+    "output_dir": "outputs",
+    "sample_rate": 24000,
+    "output_format": "mp3"
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "gemini",
+    "api_key": "",
+    "model": "gemini-1.5-flash",
+    "temperature": 0.3,
+    "timeout": 15,
+    "custom_url": ""
+  },
+  "voice": {
+    "engine": "edge_tts",
+    "voice_id": "vi-VN-NamMinhNeural",
+    "gender": "male",
+    "speed": 1.0,
+    "pitch": 0,
+    "volume": 1.0,
+    "pause_multiplier": 1.0,
+    "emotion": "neutral"
+  }
+}
