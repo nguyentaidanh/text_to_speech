@@ -117,38 +117,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Collect active config
+  // Collect active config safely
   function getActiveConfig() {
     const selectedMode = aiModeSelect ? aiModeSelect.value : 'rule_based';
     return {
       mode: selectedMode,
       ai: {
         enabled: selectedMode === 'cloud_ai',
-        provider: aiProvider.value,
-        api_key: apiKey.value
+        provider: aiProvider ? aiProvider.value : 'gemini',
+        api_key: apiKey ? apiKey.value : ''
       },
       local_ai: {
         enabled: selectedMode === 'local_ai',
-        provider: localProvider.value,
-        model: localModelSelect.value,
-        host: localHost.value,
-        port: parseInt(localPort.value) || 11434
+        provider: localProvider ? localProvider.value : 'ollama',
+        model: localModelSelect ? (localModelSelect.value || 'qwen2.5:7b') : 'qwen2.5:7b',
+        host: localHost ? localHost.value : '127.0.0.1',
+        port: localPort ? (parseInt(localPort.value) || 11434) : 11434
       },
       voice: {
         engine: "edge_tts",
-        voice_id: voiceSelect.value,
-        speed: parseFloat(speedRange.value),
-        pitch: parseFloat(pitchRange.value),
-        pause_multiplier: parseFloat(pauseMultiplier.value)
+        voice_id: voiceSelect ? voiceSelect.value : 'vi-VN-HoaiMyNeural',
+        speed: speedRange ? parseFloat(speedRange.value) : 0.95,
+        pitch: pitchRange ? parseFloat(pitchRange.value) : 2.0,
+        pause_multiplier: pauseMultiplier ? parseFloat(pauseMultiplier.value) : 1.0
       },
       pause_rules: {
-        ",": parseInt(document.getElementById('pauseComma').value),
-        ".": parseInt(document.getElementById('pausePeriod').value),
-        ":": parseInt(document.getElementById('pauseColon').value),
-        "?": parseInt(document.getElementById('pauseQuestion').value),
-        "!": parseInt(document.getElementById('pauseExclamation').value),
-        "newline": parseInt(document.getElementById('pauseNewline').value),
-        "paragraph": parseInt(document.getElementById('pauseParagraph').value)
+        ",": parseInt(document.getElementById('pauseComma')?.value || 250),
+        ".": parseInt(document.getElementById('pausePeriod')?.value || 700),
+        ":": parseInt(document.getElementById('pauseColon')?.value || 400),
+        "?": parseInt(document.getElementById('pauseQuestion')?.value || 700),
+        "!": parseInt(document.getElementById('pauseExclamation')?.value || 650),
+        "newline": parseInt(document.getElementById('pauseNewline')?.value || 700),
+        "paragraph": parseInt(document.getElementById('pauseParagraph')?.value || 1000)
       }
     };
   }
@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ text, config: getActiveConfig() })
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "Lỗi phân tích văn bản");
       renderAnalysis(data);
     } catch (err) {
       inspectorBody.innerHTML = `<div class='empty-state' style='color:#ef4444;'>Lỗi: ${err.message}</div>`;
@@ -175,21 +176,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAnalysis(data) {
     inspectorBody.innerHTML = '';
-    document.getElementById('providerBadge').textContent = `Provider: ${data.provider} | AI: ${data.is_ai_assisted}`;
+    document.getElementById('providerBadge').textContent = `Provider: ${data.provider || 'rule_based'} | AI: ${data.is_ai_assisted || false}`;
 
-    data.segments.forEach(seg => {
-      const card = document.createElement('div');
-      card.className = 'segment-card';
-      card.innerHTML = `
-        <div class="raw-text">#${seg.sentence_id}. ${seg.raw_text}</div>
-        <div class="norm-text">➜ Chuẩn hóa: ${seg.normalized_text}</div>
-        <div class="segment-meta">
-          <span>😊 Cảm xúc: ${seg.emotion}</span>
-          <span>⏱️ Khoảng ngắt: ${seg.pause_after_ms}ms</span>
-        </div>
-      `;
-      inspectorBody.appendChild(card);
-    });
+    if (data.segments && Array.isArray(data.segments)) {
+      data.segments.forEach(seg => {
+        const card = document.createElement('div');
+        card.className = 'segment-card';
+        card.innerHTML = `
+          <div class="raw-text">#${seg.sentence_id}. ${seg.raw_text}</div>
+          <div class="norm-text">➜ Chuẩn hóa: ${seg.normalized_text}</div>
+          <div class="segment-meta">
+            <span>😊 Cảm xúc: ${seg.emotion}</span>
+            <span>⏱️ Khoảng ngắt: ${seg.pause_after_ms}ms</span>
+          </div>
+        `;
+        inspectorBody.appendChild(card);
+      });
+    }
   }
 
   // Synthesize Speech
@@ -206,18 +209,30 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, config: getActiveConfig() })
       });
+      
       const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.detail || "Không thể tạo giọng nói từ server");
+      }
+
+      if (!data || !data.analysis) {
+        throw new Error("Dữ liệu phản hồi từ server không hợp lệ");
+      }
+
       currentSynthesisResult = data;
       renderAnalysis(data.analysis);
 
       // Load audio player
-      const audioBlob = hexToBlob(data.audio_hex, 'audio/mpeg');
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioPlayer.src = audioUrl;
-      audioPlayer.play();
-      btnPlayPause.textContent = '⏸';
-
-      enableExportButtons(true);
+      if (data.audio_hex) {
+        const audioBlob = hexToBlob(data.audio_hex, 'audio/mpeg');
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioPlayer.src = audioUrl;
+        audioPlayer.play().catch(e => console.log("Audio play notice:", e));
+        btnPlayPause.textContent = '⏸';
+        enableExportButtons(true);
+      } else {
+        alert("Không nhận được dữ liệu âm thanh từ server.");
+      }
     } catch (err) {
       alert(`Lỗi tổng hợp giọng nói: ${err.message}`);
     } finally {
@@ -227,7 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function hexToBlob(hex, mimeType) {
-    const bytes = new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    if (!hex || typeof hex !== 'string') return new Blob([], { type: mimeType });
+    const matches = hex.match(/.{1,2}/g);
+    if (!matches) return new Blob([], { type: mimeType });
+    const bytes = new Uint8Array(matches.map(byte => parseInt(byte, 16)));
     return new Blob([bytes], { type: mimeType });
   }
 
