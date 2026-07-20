@@ -4,12 +4,12 @@ from src.domain.nlp.tokenizer import SentenceTokenizer
 
 def test_pause_engine_defaults():
     engine = PauseEngine()
-    assert engine.get_pause_for_punctuation(",") == 250
-    assert engine.get_pause_for_punctuation(".") == 700
-    assert engine.get_pause_for_punctuation(":") == 400
-    assert engine.get_pause_for_punctuation(";") == 350
-    assert engine.get_pause_for_punctuation("?") == 700
-    assert engine.get_pause_for_punctuation("!") == 650
+    assert engine.get_pause_for_punctuation(",") == 50
+    assert engine.get_pause_for_punctuation(".") == 140
+    assert engine.get_pause_for_punctuation(":") == 80
+    assert engine.get_pause_for_punctuation(";") == 70
+    assert engine.get_pause_for_punctuation("?") == 140
+    assert engine.get_pause_for_punctuation("!") == 140
 
 def test_tokenizer():
     tok = SentenceTokenizer()

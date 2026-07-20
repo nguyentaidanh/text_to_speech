@@ -36,12 +36,12 @@
   },
   "voice": {
     "engine": "edge_tts",
-    "voice_id": "vi-VN-HoaiMyNeural",
-    "gender": "female",
-    "speed": 0.95,
-    "pitch": 2.0,
+    "voice_id": "vi-VN-NamMinhNeural",
+    "gender": "male",
+    "speed": 1.0,
+    "pitch": -5.0,
     "volume": 1.0,
     "pause_multiplier": 1.0,
-    "emotion": "sweet"
+    "emotion": "podcast"
   }
 }

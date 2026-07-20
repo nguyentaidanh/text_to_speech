@@ -123,8 +123,8 @@
             <div class="form-group">
               <label for="voiceSelect">Giọng đọc Mặc định:</label>
               <select id="voiceSelect">
+                <option value="vi-VN-NamMinhNeural" selected>🎙️ Nam Minh (Giọng Nam Trầm Ấm Podcast / Đọc Truyện)</option>
                 <option value="vi-VN-HoaiMyNeural">🌸 Hoài My (Giọng Nữ Ngọt Ngào, Nhẹ Nhàng & Truyền Cảm)</option>
-                <option value="vi-VN-NamMinhNeural">🎙️ Nam Minh (Giọng Nam Trầm Ấm Podcast / Đọc Truyện)</option>
               </select>
             </div>
             <div class="form-group">
@@ -132,8 +132,8 @@
               <input type="range" id="speedRange" min="0.5" max="2.0" step="0.1" value="1.0">
             </div>
             <div class="form-group">
-              <label for="pitchRange">Cao độ (Pitch): <span id="pitchVal">0Hz</span></label>
-              <input type="range" id="pitchRange" min="-20" max="20" step="1" value="0">
+              <label for="pitchRange">Cao độ (Pitch): <span id="pitchVal">-5Hz</span></label>
+              <input type="range" id="pitchRange" min="-20" max="20" step="1" value="-5">
             </div>
             <div class="form-group">
               <label for="pauseMultiplier">Hệ số Ngắt Nghỉ: <span id="pauseVal">1.0x</span></label>
@@ -145,13 +145,14 @@
           <fieldset class="setting-group">
             <legend>⏱️ Tùy chỉnh Thời gian Ngắt (ms)</legend>
             <div class="pause-grid">
-              <div class="pause-item"><label>Dấu phẩy (,):</label><input type="number" id="pauseComma" value="250"> ms</div>
-              <div class="pause-item"><label>Dấu chấm (.):</label><input type="number" id="pausePeriod" value="700"> ms</div>
-              <div class="pause-item"><label>Dấu hai chấm (:):</label><input type="number" id="pauseColon" value="400"> ms</div>
-              <div class="pause-item"><label>Dấu chấm hỏi (?):</label><input type="number" id="pauseQuestion" value="700"> ms</div>
-              <div class="pause-item"><label>Dấu chấm cảm (!):</label><input type="number" id="pauseExclamation" value="650"> ms</div>
-              <div class="pause-item"><label>Xuống dòng:</label><input type="number" id="pauseNewline" value="700"> ms</div>
-              <div class="pause-item"><label>Đoạn văn:</label><input type="number" id="pauseParagraph" value="1000"> ms</div>
+              <div class="pause-item"><label>Dấu phẩy (,):</label><input type="number" id="pauseComma" value="50"> ms</div>
+              <div class="pause-item"><label>Dấu chấm (.):</label><input type="number" id="pausePeriod" value="140"> ms</div>
+              <div class="pause-item"><label>Dấu hai chấm (:):</label><input type="number" id="pauseColon" value="80"> ms</div>
+              <div class="pause-item"><label>Dấu phẩy động (;):</label><input type="number" id="pauseSemicolon" value="70"> ms</div>
+              <div class="pause-item"><label>Dấu chấm hỏi (?):</label><input type="number" id="pauseQuestion" value="140"> ms</div>
+              <div class="pause-item"><label>Dấu chấm cảm (!):</label><input type="number" id="pauseExclamation" value="140"> ms</div>
+              <div class="pause-item"><label>Xuống dòng:</label><input type="number" id="pauseNewline" value="140"> ms</div>
+              <div class="pause-item"><label>Đoạn văn:</label><input type="number" id="pauseParagraph" value="280"> ms</div>
             </div>
           </fieldset>
         </div>

@@ -32,14 +32,14 @@ class ConfigManager:
 
     def get_pause_rules(self) -> Dict[str, int]:
         return self.pause_config.get("pause_durations_ms", {
-            ",": 250,
-            ".": 700,
-            ":": 400,
-            ";": 350,
-            "?": 700,
-            "!": 650,
-            "paragraph": 1000,
-            "newline": 700
+            ",": 50,
+            ".": 140,
+            ":": 80,
+            ";": 70,
+            "?": 140,
+            "!": 140,
+            "paragraph": 280,
+            "newline": 140
         })
 
     def save_pause_rules(self, pause_rules: Dict[str, int]):

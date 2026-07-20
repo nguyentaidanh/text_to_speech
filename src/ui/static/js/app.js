@@ -135,19 +135,20 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       voice: {
         engine: "edge_tts",
-        voice_id: voiceSelect ? voiceSelect.value : 'vi-VN-HoaiMyNeural',
-        speed: speedRange ? parseFloat(speedRange.value) : 0.95,
-        pitch: pitchRange ? parseFloat(pitchRange.value) : 2.0,
+        voice_id: voiceSelect ? voiceSelect.value : 'vi-VN-NamMinhNeural',
+        speed: speedRange ? parseFloat(speedRange.value) : 1.0,
+        pitch: pitchRange ? parseFloat(pitchRange.value) : -5.0,
         pause_multiplier: pauseMultiplier ? parseFloat(pauseMultiplier.value) : 1.0
       },
       pause_rules: {
-        ",": parseInt(document.getElementById('pauseComma')?.value || 250),
-        ".": parseInt(document.getElementById('pausePeriod')?.value || 700),
-        ":": parseInt(document.getElementById('pauseColon')?.value || 400),
-        "?": parseInt(document.getElementById('pauseQuestion')?.value || 700),
-        "!": parseInt(document.getElementById('pauseExclamation')?.value || 650),
-        "newline": parseInt(document.getElementById('pauseNewline')?.value || 700),
-        "paragraph": parseInt(document.getElementById('pauseParagraph')?.value || 1000)
+        ",": parseInt(document.getElementById('pauseComma')?.value || 50),
+        ".": parseInt(document.getElementById('pausePeriod')?.value || 140),
+        ":": parseInt(document.getElementById('pauseColon')?.value || 80),
+        ";": parseInt(document.getElementById('pauseSemicolon')?.value || 70),
+        "?": parseInt(document.getElementById('pauseQuestion')?.value || 140),
+        "!": parseInt(document.getElementById('pauseExclamation')?.value || 140),
+        "newline": parseInt(document.getElementById('pauseNewline')?.value || 140),
+        "paragraph": parseInt(document.getElementById('pauseParagraph')?.value || 280)
       }
     };
   }

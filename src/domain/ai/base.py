@@ -51,7 +51,7 @@ class RuleBasedAnalyzer(AIAnalyzer):
                         normalized_text=normalized,
                         emotion=config.get("emotion", "neutral"),
                         pitch_adjustment=config.get("pitch", 0.0),
-                        speed_adjustment=config.get("speed", 1.0),
+                        speed_adjustment=config.get("speed", 1.25),
                         pause_after_ms=pause_ms,
                         emphasis_words=[]
                     )
