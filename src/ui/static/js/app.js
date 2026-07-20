@@ -29,10 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentSynthesisResult = null;
 
-  // Preset text handlers
+  // Preset text & voice handlers
   const presets = {
-    news: "Hôm nay 20/07/2026 lúc 09:30, Tập đoàn Công nghệ công bố doanh thu 100.000đ mỗi cổ phiếu tại TP.HCM. Tốc độ tăng trưởng đạt 25% trong quý II.",
+    sweet_female: "Chào anh, chúc anh một ngày mới thật nhiều niềm vui và may mắn. Em luôn ở đây đồng hành và lắng nghe cùng anh nhé!",
     podcast: "Chào mừng các bạn đã đến với kênh Podcast Nam Trầm. Hôm nay chúng ta sẽ bàn về Trí tuệ Nhân tạo và tương lai của công nghệ TTS.",
+    news: "Hôm nay 20/07/2026 lúc 09:30, Tập đoàn Công nghệ công bố doanh thu 100.000đ mỗi cổ phiếu tại TP.HCM. Tốc độ tăng trưởng đạt 25% trong quý II.",
     tech: "Website google.com và ứng dụng YouTube chính thức tích hợp 50km đường truyền băng thông rộng với tốc độ 100MB mỗi giây."
   };
 
@@ -40,6 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const pKey = btn.getAttribute('data-preset');
       inputText.value = presets[pKey] || '';
+      if (pKey === 'sweet_female') {
+        voiceSelect.value = 'vi-VN-HoaiMyNeural';
+        speedRange.value = 0.9;
+        speedVal.textContent = '0.9x';
+        pitchRange.value = 2;
+        pitchVal.textContent = '+2Hz';
+      } else if (pKey === 'podcast') {
+        voiceSelect.value = 'vi-VN-NamMinhNeural';
+        speedRange.value = 1.0;
+        speedVal.textContent = '1.0x';
+        pitchRange.value = 0;
+        pitchVal.textContent = '0Hz';
+      }
       updateCharCount();
     });
   });

@@ -22,12 +22,12 @@ class EdgeTTSEngine(TTSEngine):
             ),
             VoiceInfo(
                 id="vi-VN-HoaiMyNeural",
-                name="Hoài My (Vietnamese Female Soft Natural)",
+                name="Hoài My (Giọng Nữ Ngọt Ngào, Nhẹ Nhàng & Truyền Cảm)",
                 gender="female",
                 language="vi-VN",
-                description="Clear, soft, natural Vietnamese female voice",
+                description="Giọng nữ Tiếng Việt ngọt ngào, truyền cảm, phát âm tròn vành rõ chữ, phù hợp đọc truyện, thơ, CSKH & livestream",
                 is_offline=False,
-                style="natural"
+                style="sweet"
             )
         ]
 
