@@ -153,11 +153,47 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  const errorBanner = document.getElementById('errorBanner');
+  const alertTitle = document.getElementById('alertTitle');
+  const alertMessage = document.getElementById('alertMessage');
+  const btnCloseAlert = document.getElementById('btnCloseAlert');
+
+  if (btnCloseAlert) {
+    btnCloseAlert.addEventListener('click', () => {
+      if (errorBanner) errorBanner.style.display = 'none';
+    });
+  }
+
+  function showUIError(title, message) {
+    console.error(`[VietTTS Error] ${title}: ${message}`);
+    if (errorBanner && alertTitle && alertMessage) {
+      alertTitle.textContent = title;
+      alertMessage.textContent = message;
+      errorBanner.style.display = 'flex';
+    }
+    if (inspectorBody) {
+      inspectorBody.innerHTML = `
+        <div style="background-color:#450a0a; border:1px solid #dc2626; color:#fca5a5; padding:12px; border-radius:8px; margin-top:8px;">
+          <strong style="color:#ef4444; font-size:1rem;">⚠️ ${title}</strong>
+          <p style="margin-top:6px; font-size:0.9rem; line-height:1.4;">${message}</p>
+        </div>
+      `;
+    }
+  }
+
+  function hideUIError() {
+    if (errorBanner) errorBanner.style.display = 'none';
+  }
+
   // Analyze Text
   btnAnalyze.addEventListener('click', async () => {
     const text = inputText.value.trim();
-    if (!text) return alert("Vui lòng nhập văn bản!");
+    if (!text) {
+      showUIError("Văn bản rỗng", "Vui lòng nhập đoạn văn bản Tiếng Việt vào khung trước khi phân tích.");
+      return;
+    }
 
+    hideUIError();
     inspectorBody.innerHTML = "<div class='empty-state'>Đang phân tích ngữ âm...</div>";
 
     try {
@@ -167,10 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ text, config: getActiveConfig() })
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.detail || "Lỗi phân tích văn bản");
+      if (!resp.ok) throw new Error(data.detail || "Lỗi phân tích văn bản từ server");
       renderAnalysis(data);
     } catch (err) {
-      inspectorBody.innerHTML = `<div class='empty-state' style='color:#ef4444;'>Lỗi: ${err.message}</div>`;
+      showUIError("Lỗi Phân Tích Ngữ Âm", err.message || "Không thể kết nối đến server API.");
     }
   });
 
@@ -198,8 +234,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Synthesize Speech
   btnSynthesize.addEventListener('click', async () => {
     const text = inputText.value.trim();
-    if (!text) return alert("Vui lòng nhập văn bản!");
+    if (!text) {
+      showUIError("Văn bản rỗng", "Vui lòng nhập đoạn văn bản Tiếng Việt vào khung trước khi tạo giọng nói.");
+      return;
+    }
 
+    hideUIError();
     btnSynthesize.disabled = true;
     btnSynthesize.textContent = "⏳ Đang tổng hợp...";
 
@@ -212,11 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const data = await resp.json();
       if (!resp.ok) {
-        throw new Error(data.detail || "Không thể tạo giọng nói từ server");
+        throw new Error(data.detail || "Không thể tạo giọng nói từ server.");
       }
 
       if (!data || !data.analysis) {
-        throw new Error("Dữ liệu phản hồi từ server không hợp lệ");
+        throw new Error("Dữ liệu phản hồi từ server không hợp lệ.");
       }
 
       currentSynthesisResult = data;
@@ -231,10 +271,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPlayPause.textContent = '⏸';
         enableExportButtons(true);
       } else {
-        alert("Không nhận được dữ liệu âm thanh từ server.");
+        showUIError("Lỗi Dữ Liệu Âm Thanh", "Không nhận được dữ liệu âm thanh từ server.");
       }
     } catch (err) {
-      alert(`Lỗi tổng hợp giọng nói: ${err.message}`);
+      showUIError("Lỗi Tạo Giọng Nói", err.message || "Không thể kết nối đến server API.");
     } finally {
       btnSynthesize.disabled = false;
       btnSynthesize.textContent = "▶ Tạo Giọng Nói";
